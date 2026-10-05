@@ -30,16 +30,10 @@ class NotificationListener : NotificationListenerService() {
     companion object {
         private const val TAG = "ExpenseTrackerListener"
 
-        // Target application packages (Google Wallet, Google Pay, Israeli cards)
-        private val TARGET_PACKAGES = setOf(
-            "com.google.android.apps.walletnfcrel", // Google Wallet
-            "com.google.android.apps.nbu.paisa.user", // Google Pay
-            "com.google.android.gms", // Google Play services
-            "com.max.app", // Max it
-            "com.isracard", // Isracard
-            "com.cal.app", // Cal
-            "com.bankhapoalim.bpay", // Poalim
-            "com.leumi.leumicard" // Leumi
+        // STRICT: Only Google Wallet & Google Pay packages
+        private val GOOGLE_WALLET_PACKAGES = setOf(
+            "com.google.android.apps.walletnfcrel", // Google Wallet official app
+            "com.google.android.apps.nbu.paisa.user" // Google Pay
         )
     }
 
@@ -48,8 +42,18 @@ class NotificationListener : NotificationListenerService() {
         if (sbn == null) return
 
         val packageName = sbn.packageName ?: ""
-        val extras = sbn.notification?.extras ?: return
 
+        // NEVER process WhatsApp, Telegram, SMS, or any non-Google Wallet app
+        val isWalletPackage = GOOGLE_WALLET_PACKAGES.contains(packageName)
+        val isGooglePlayPayment = packageName == "com.google.android.gms" &&
+                (sbn.notification?.extras?.getString(Notification.EXTRA_TITLE)?.contains("Google Pay") == true ||
+                 sbn.notification?.extras?.getString(Notification.EXTRA_TITLE)?.contains("Wallet") == true)
+
+        if (!isWalletPackage && !isGooglePlayPayment) {
+            return
+        }
+
+        val extras = sbn.notification?.extras ?: return
         val title = extras.getCharSequence(Notification.EXTRA_TITLE)?.toString() ?: ""
         val text = extras.getCharSequence(Notification.EXTRA_TEXT)?.toString() ?: ""
         val bigText = extras.getCharSequence(Notification.EXTRA_BIG_TEXT)?.toString() ?: ""
@@ -59,18 +63,15 @@ class NotificationListener : NotificationListenerService() {
 
         val fullText = "$title $body".trim()
 
-        // Check if from target package or contains payment keywords
-        val isTargetApp = TARGET_PACKAGES.contains(packageName)
-        val hasPaymentKeyword = fullText.contains("שילמת") ||
+        // Verify it contains a payment indicator (e.g. "שילמת", "₪", "Paid")
+        val hasPaymentIndicator = fullText.contains("שילמת") ||
                 fullText.contains("חויבת") ||
-                fullText.contains("עסקה") ||
                 fullText.contains("₪") ||
                 fullText.contains("Paid") ||
-                fullText.contains("payment") ||
-                fullText.contains("Google Pay") ||
-                fullText.contains("Wallet")
+                fullText.contains("ILS") ||
+                fullText.contains("NIS")
 
-        if (!isTargetApp && !hasPaymentKeyword) {
+        if (!hasPaymentIndicator) {
             return
         }
 
