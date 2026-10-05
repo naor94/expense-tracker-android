@@ -28,14 +28,18 @@ jobs:
         with:
           gradle-version: '8.4'
 
-      - name: Build Debug APK
-        run: gradle assembleDebug --stacktrace
+      - name: Generate Keystore
+        run: |
+          keytool -genkey -v -keystore release.jks -alias expensetracker -keyalg RSA -keysize 2048 -validity 10000 -storepass android_secure_pass -keypass android_secure_pass -dname "CN=ExpenseTracker, OU=Mobile, O=Naor, L=TelAviv, C=IL"
+
+      - name: Build Release APK
+        run: gradle assembleRelease --stacktrace
 
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
           name: expense-tracker-apk
-          path: app/build/outputs/apk/debug/app-debug.apk
+          path: app/build/outputs/apk/release/app-release.apk
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
@@ -44,7 +48,7 @@ jobs:
           tag_name: latest
           name: "Expense Tracker Android App"
           body: "הורדת קובץ ה-APK להתקנה ישירה בטלפון האנדרואיד שלך."
-          files: app/build/outputs/apk/debug/app-debug.apk
+          files: app/build/outputs/apk/release/app-release.apk
           draft: false
           prerelease: false
         env:

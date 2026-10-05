@@ -17,8 +17,27 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
+    signingConfigs {
+        create("release") {
+            val ksFile = rootProject.file("release.jks")
+            if (ksFile.exists()) {
+                storeFile = ksFile
+                storePassword = "android_secure_pass"
+                keyAlias = "expensetracker"
+                keyPassword = "android_secure_pass"
+                enableV1Signing = true
+                enableV2Signing = true
+                enableV3Signing = true
+            }
+        }
+    }
+
     buildTypes {
         release {
+            val ksFile = rootProject.file("release.jks")
+            if (ksFile.exists()) {
+                signingConfig = signingConfigs.getByName("release")
+            }
             isMinifyEnabled = false
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
@@ -26,7 +45,10 @@ android {
             )
         }
         debug {
-            applicationIdSuffix = ".debug"
+            val ksFile = rootProject.file("release.jks")
+            if (ksFile.exists()) {
+                signingConfig = signingConfigs.getByName("release")
+            }
             isDebuggable = true
         }
     }
