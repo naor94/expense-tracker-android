@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">מעקב הוצאות</string>
+    <string name="default_webhook_url">https://expense-tracker-web-sigma-seven.vercel.app/api/webhook/google-pay</string>
+</resources>
